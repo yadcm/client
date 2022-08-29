@@ -3,20 +3,30 @@ package main
 import (
 	"context"
 	"log"
-	"net/netip"
-	"yadcmc/internal/app"
-	protocol "yadcmc/internal/pb/yadcmd.daemon"
+	"yadcmc/internal/app/views"
+
+	ui "github.com/gizak/termui/v3"
 )
 
 func main() {
-	// https://github.com/gizak/termui
-	cl, err := app.NewClient(netip.MustParseAddrPort("0.0.0.0:49069"))
-	if err != nil {
-		panic(err)
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
 	}
-	result, err := cl.Greeting(context.Background(), &protocol.Hello{Version: 1000})
-	if err != nil {
-		panic(err)
+	defer ui.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() //@todo
+	var nextView *views.PresentView = &views.PresentView{
+		View: views.NewInitialView,
 	}
-	log.Println(result.Version)
+	for {
+		if nextView == nil {
+			break
+		}
+		if nextView.View == nil {
+			break
+		}
+		if view := nextView.View(nextView.Args); view != nil {
+			nextView = view.Mount(ctx)
+		}
+	}
 }

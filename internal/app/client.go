@@ -5,7 +5,7 @@ import (
 	"net/netip"
 	"time"
 
-	protocol "yadcmc/internal/pb/yadcmd.daemon"
+	protocol "yadcmc/internal/pb/protocol/daemon"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +18,7 @@ const (
 )
 
 type Client struct {
-	protocol.DaemonClient
+	protocol.InternalAPIClient
 	conn *grpc.ClientConn
 }
 
@@ -36,7 +36,7 @@ func NewClient(addr netip.AddrPort) (*Client, error) {
 		return nil, err
 	}
 	var cl Client
-	cl.DaemonClient = protocol.NewDaemonClient(conn)
+	cl.InternalAPIClient = protocol.NewInternalAPIClient(conn)
 	cl.conn = conn
 	return &cl, nil
 }

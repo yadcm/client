@@ -20,6 +20,7 @@ type CreateProfileView struct {
 	*View
 	editing             bool
 	msgContainer        *widgets.Paragraph
+	inputAddr           *components.TextEdit
 	inputUsername       *components.TextEdit
 	inputPassword       *components.TextEdit
 	inputRepeatPassword *components.TextEdit
@@ -34,11 +35,18 @@ func (v *CreateProfileView) OnInput(key string) {
 	defer v.Render()
 	if v.editing {
 		// @todo need better way to connect events
+		v.inputAddr.OnInput(key)
 		v.inputPassword.OnInput(key)
 		v.inputUsername.OnInput(key)
 		v.inputRepeatPassword.OnInput(key)
 	}
 	switch key {
+	case "A":
+		if v.editing {
+			return
+		}
+		v.editing = true
+		v.inputAddr.Focus()
 	case "U":
 		if v.editing {
 			return
@@ -83,6 +91,7 @@ func (v *CreateProfileView) validatePassword() error {
 func (v *CreateProfileView) createProfile() {
 	var profile model.Profile
 	profile.Tag = v.inputUsername.Value()
+	profile.Host = v.inputAddr.Value()
 	data, errMarshall := msgpack.Marshal(profile)
 	if errMarshall != nil {
 		v.msgContainer.Text = errMarshall.Error()
@@ -102,6 +111,7 @@ func (v *CreateProfileView) createProfile() {
 		v.Render()
 		return
 	}
+	//@todo push profile to daemon
 }
 
 func NewCreateProfileView(_ ViewArgs) Mountable {
@@ -110,12 +120,16 @@ func NewCreateProfileView(_ ViewArgs) Mountable {
 	// @todo need a better way to do it
 	view.View = NewView(grid, view.OnInput, view.OnUnmount)
 
+	view.inputAddr = components.NewTextEdit("<A>DDRESS", false)
 	view.inputUsername = components.NewTextEdit("<U>SERNAME", false)
 	view.inputPassword = components.NewTextEdit("<P>ASSWORD", true)
 	view.inputRepeatPassword = components.NewTextEdit("<R>EPEAT", true)
 	view.msgContainer = widgets.NewParagraph()
 	view.msgContainer.Border = false
 	grid.Set(
+		termui.NewRow(1.0/5,
+			termui.NewCol(1.0/1, view.inputAddr),
+		),
 		termui.NewRow(1.0/5,
 			termui.NewCol(1.0/1, view.inputUsername),
 		),
